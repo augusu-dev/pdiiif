@@ -33,9 +33,11 @@
   import type { CanvasNormalized } from '@iiif/presentation-3-normalized';
 
   export let apiEndpoint: string = 'http://localhost:31337/api';
-  export let coverPageEndpoint: string = `${apiEndpoint}/coverpage`;
+  export let coverPageEndpoint: string | undefined = apiEndpoint ? `${apiEndpoint}/coverpage` : undefined;
   export let initialManifestUrl: string | null = null;
   export let onError: ((err: Error) => void) | undefined = undefined;
+
+  const hasServer = !!apiEndpoint;
 
   // We use a self-hosted MITM page for the streamsaver service worker
   // to avoid GDPR issues.
@@ -458,13 +460,23 @@
     let promise: Promise<void>;
     let generateOnClient: boolean;
     const { size: sizeEstimate, corsSupported } = (await estimatePromise)!;
-    if (!corsSupported) {
+    if (!corsSupported && !hasServer) {
+      // No CORS support and no server available - cannot generate
+      addNotification({
+        type: 'error',
+        message: 'This manifest requires a server for PDF generation, but no server is configured.',
+      });
+      return;
+    } else if (!corsSupported) {
       generateOnClient = false;
     } else if (supportsFilesystemAPI || supportsStreamsaver()) {
       generateOnClient = true;
     } else {
       generateOnClient = sizeEstimate <= getMaximumBlobSize();
-      if (!generateOnClient) {
+      if (!generateOnClient && !hasServer) {
+        // Too large for blob and no server - force client anyway
+        generateOnClient = true;
+      } else if (!generateOnClient) {
         try {
           generateOnClient = await new Promise((resolve, reject) => {
             const tag = getRandomToken();

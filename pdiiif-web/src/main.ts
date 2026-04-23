@@ -52,7 +52,7 @@ let apiEndpoint = import.meta.env.PDIIIF_API_ENDPOINT as string;
 if (!apiEndpoint) {
   apiEndpoint = import.meta.env.DEV
     ? 'http://localhost:31337/api'
-    : `${window.location.toString().replace(/\/?(?:\?.*)?$/g, '')}/api`;
+    : '';
 }
 
 render(document.getElementById('app')!, {

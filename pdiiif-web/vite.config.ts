@@ -9,6 +9,7 @@ export default defineConfig(async ({ command, mode }) => {
     plugins: [tailwind(), autoprefixer()],
   };
   return {
+    base: '/pdiiif/',
     assetsInclude: ['assets/**'],
     plugins: [
       svelte({
