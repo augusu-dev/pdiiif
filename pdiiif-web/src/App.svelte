@@ -175,6 +175,11 @@
           }
           sampledCanvases = estimation.sampleCanvases;
           return estimation;
+        }).catch(() => {
+          // Estimation can fail if the Image API doesn't support custom sizes
+          // (e.g. NDL level 1 endpoints). Return a fallback so PDF generation
+          // can proceed without a size estimate.
+          return { size: 0, corsSupported: true, sampleCanvases: [] as any[] } as Estimation;
         });
         return info;
       })

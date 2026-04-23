@@ -585,22 +585,34 @@ function resolveManifestUrl(url: string): string {
   return url;
 }
 
+function isNdlUrl(url: string): boolean {
+  return /^https?:\/\/dl\.ndl\.go\.jp\/pid\/\d+\/?$/.test(url);
+}
+
 /** Download the JSON data for a manifest, handling stuff like broken CORS implementations
  *  and Content-Negotiation for IIIFv3 */
 export async function fetchManifestJson(manifestUrl: string): Promise<any> {
   const resolvedUrl = resolveManifestUrl(manifestUrl);
+  let resp: Response;
   try {
-    const resp = await fetch(resolvedUrl, {
+    resp = await fetch(resolvedUrl, {
       headers: {
         Accept: MANIFEST_ACCEPT_HEADER
       }
     });
-    return await resp.json();
   } catch (err) {
     // Check if fetching failed due to CORS by downgrading the request to a
     // 'simple' request by removing the `Accept` header, which makes the
     // request CORS-unsafe due to double quotes and the colon in the URL
-    const resp = await fetch(resolvedUrl);
-    return await resp.json();
+    resp = await fetch(resolvedUrl);
   }
+  if (!resp.ok) {
+    if (isNdlUrl(manifestUrl)) {
+      throw new Error(
+        'This NDL item does not have a IIIF manifest. Only items with "internet" access (e.g. public domain) are supported.'
+      );
+    }
+    throw new Error(`Failed to fetch manifest: HTTP ${resp.status}`);
+  }
+  return await resp.json();
 }
