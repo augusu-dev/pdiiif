@@ -12,6 +12,7 @@
     type OptimizationParams,
     type ConvertOptions,
   } from 'pdiiif';
+  import { fetchManifestJson } from 'pdiiif';
   import { getValue } from '@iiif/helpers';
   import streamSaver from 'streamsaver';
 
@@ -237,9 +238,9 @@
   ///  - Using StreamSaver.js (simulating a HTTP download via a service worker)
   ///  - Otherwise through a `Blob`, if the manifest is small enough
   async function generatePdfClientSide(): Promise<void> {
-    let manifestResp: Response;
+    let manifestJson: any;
     try {
-      manifestResp = await fetch(manifestUrl);
+      manifestJson = await fetchManifestJson(manifestUrl);
     } catch (err) {
       onError?.(err as Error);
       addNotification({
@@ -250,7 +251,6 @@
       });
       return;
     }
-    const manifestJson = await manifestResp.json();
 
     let cleanLabel = (outputFileName || getValue(manifestInfo!.label)).substring(0, 200);
     if (cleanLabel.endsWith('.')) {
