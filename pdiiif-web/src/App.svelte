@@ -53,6 +53,7 @@
   let notifyWhenDone = false;
   let canvasIdentifiers: string[] | undefined = undefined;
   let optimizationConfig: OptimizationParams | undefined = undefined;
+  let outputFileName: string = '';
 
   // Validation state
   let manifestUrlIsValid: boolean | undefined;
@@ -140,6 +141,7 @@
     sampledCanvases = undefined;
     scaleFactor = 1;
     optimizationConfig = undefined;
+    outputFileName = '';
   }
 
   function updateEstimate() {
@@ -147,6 +149,12 @@
     infoPromise = fetchManifestInfo(manifestUrl)
       .then((info) => {
         manifestInfo = info;
+        if (info.label && !outputFileName) {
+          outputFileName = info.label.substring(0, 200);
+          if (outputFileName.endsWith('.')) {
+            outputFileName = outputFileName.substring(0, outputFileName.length - 1);
+          }
+        }
         estimatePromise = estimatePdfSize({
           manifest: manifestInfo.manifest.id,
           filterCanvases: canvasIdentifiers,
@@ -233,9 +241,8 @@
     }
     const manifestJson = await manifestResp.json();
 
-    let cleanLabel = getValue(manifestInfo!.label).substring(0, 200); // Limit file name length
+    let cleanLabel = (outputFileName || getValue(manifestInfo!.label)).substring(0, 200);
     if (cleanLabel.endsWith('.')) {
-      // Prevent duplicate period characters in filename
       cleanLabel = cleanLabel.substring(0, cleanLabel.length - 1);
     }
 
@@ -569,6 +576,15 @@
         {$_('buttons.generate')}
       </button>
     </div>
+    {#if manifestInfo}
+      <input
+        class="w-full h-8 mt-2 px-3 text-sm placeholder-gray-500 rounded-lg text-gray-700"
+        type="text"
+        placeholder="Output file name"
+        disabled={currentProgress !== undefined && !pdfFinished}
+        bind:value={outputFileName}
+      />
+    {/if}
     {#if manifestInfo}
       <Settings
         bind:scaleFactor

@@ -573,11 +573,24 @@ export async function fetchCanvasData(
   };
 }
 
+/** Resolve a manifest URL, converting known portal URLs to IIIF manifest URLs.
+ *  Currently supports NDL (National Diet Library, dl.ndl.go.jp) PID URLs. */
+function resolveManifestUrl(url: string): string {
+  const ndlPidMatch = url.match(
+    /^https?:\/\/dl\.ndl\.go\.jp\/pid\/(\d+)\/?$/
+  );
+  if (ndlPidMatch) {
+    return `https://dl.ndl.go.jp/api/iiif/${ndlPidMatch[1]}/manifest.json`;
+  }
+  return url;
+}
+
 /** Download the JSON data for a manifest, handling stuff like broken CORS implementations
  *  and Content-Negotiation for IIIFv3 */
 export async function fetchManifestJson(manifestUrl: string): Promise<any> {
+  const resolvedUrl = resolveManifestUrl(manifestUrl);
   try {
-    const resp = await fetch(manifestUrl, {
+    const resp = await fetch(resolvedUrl, {
       headers: {
         Accept: MANIFEST_ACCEPT_HEADER
       }
@@ -587,7 +600,7 @@ export async function fetchManifestJson(manifestUrl: string): Promise<any> {
     // Check if fetching failed due to CORS by downgrading the request to a
     // 'simple' request by removing the `Accept` header, which makes the
     // request CORS-unsafe due to double quotes and the colon in the URL
-    const resp = await fetch(manifestUrl);
+    const resp = await fetch(resolvedUrl);
     return await resp.json();
   }
 }

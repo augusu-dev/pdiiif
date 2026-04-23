@@ -33,6 +33,18 @@ import { GeneratorQueue } from './queue.js';
 
 const vault: Vault = globalVault();
 
+/** Resolve a manifest URL, converting known portal URLs to IIIF manifest URLs.
+ *  Currently supports NDL (National Diet Library, dl.ndl.go.jp) PID URLs. */
+function resolveManifestUrl(url: string): string {
+  const ndlPidMatch = url.match(
+    /^https?:\/\/dl\.ndl\.go\.jp\/pid\/(\d+)\/?$/
+  );
+  if (ndlPidMatch) {
+    return `https://dl.ndl.go.jp/api/iiif/${ndlPidMatch[1]}/manifest.json`;
+  }
+  return url;
+}
+
 async function validateManifest(res: Response, manifestUrl: any): Promise<any> {
   const badManifestUrl =
     !manifestUrl ||
@@ -49,16 +61,18 @@ async function validateManifest(res: Response, manifestUrl: any): Promise<any> {
       .send();
     return;
   }
-  const manifestResp = await fetch(manifestUrl as string);
+  const resolvedUrl = resolveManifestUrl(manifestUrl as string);
+  const manifestResp = await fetch(resolvedUrl);
   if (manifestResp.status != 200) {
     log.info('Could not receive manifest, failed to serve request.', {
       manifestUrl,
+      resolvedUrl,
       httpStatus: manifestResp.status,
     });
     res
       .status(500)
       .json({
-        reason: `Could not fetch manifest from ${manifestUrl}, got HTTP status ${manifestResp.status}`,
+        reason: `Could not fetch manifest from ${resolvedUrl}, got HTTP status ${manifestResp.status}`,
       })
       .send();
     return;
@@ -67,12 +81,12 @@ async function validateManifest(res: Response, manifestUrl: any): Promise<any> {
   if (!manifestJson) {
     log.info(
       'Manifest response did not include JSON data, failed to serve request.',
-      { manifestUrl }
+      { manifestUrl, resolvedUrl }
     );
     res
       .status(500)
       .json({
-        reason: `Response from ${manifestUrl} did not contain valid IIIF Manifest.`,
+        reason: `Response from ${resolvedUrl} did not contain valid IIIF Manifest.`,
       })
       .send();
     return;
