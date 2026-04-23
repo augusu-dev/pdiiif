@@ -157,15 +157,22 @@
             outputFileName = outputFileName.substring(0, outputFileName.length - 1);
           }
         }
-        estimatePromise = estimatePdfSize({
-          manifest: manifestInfo.manifest.id,
-          filterCanvases: canvasIdentifiers,
-          concurrency: 4,
-          scaleFactor,
-          numSamples: 8,
-          optimization: optimizationConfig,
-          sampleCanvases: sampledCanvases,
-        }).then((estimation) => {
+        const ESTIMATION_TIMEOUT = 15000; // 15 seconds
+        const fallbackEstimation: Estimation = { size: 0, corsSupported: true, sampleCanvases: [] as any[] } as Estimation;
+        estimatePromise = Promise.race([
+          estimatePdfSize({
+            manifest: manifestInfo.manifest.id,
+            filterCanvases: canvasIdentifiers,
+            concurrency: 4,
+            scaleFactor,
+            numSamples: 8,
+            optimization: optimizationConfig,
+            sampleCanvases: sampledCanvases,
+          }),
+          new Promise<Estimation>((resolve) =>
+            setTimeout(() => resolve(fallbackEstimation), ESTIMATION_TIMEOUT)
+          ),
+        ]).then((estimation) => {
           if (!estimation.corsSupported) {
             // Show a warning if the Image API endpoint does not support CORS
             addNotification({
@@ -176,10 +183,7 @@
           sampledCanvases = estimation.sampleCanvases;
           return estimation;
         }).catch(() => {
-          // Estimation can fail if the Image API doesn't support custom sizes
-          // (e.g. NDL level 1 endpoints). Return a fallback so PDF generation
-          // can proceed without a size estimate.
-          return { size: 0, corsSupported: true, sampleCanvases: [] as any[] } as Estimation;
+          return fallbackEstimation;
         });
         return info;
       })

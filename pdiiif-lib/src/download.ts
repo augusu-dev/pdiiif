@@ -609,7 +609,7 @@ export async function fetchManifestJson(manifestUrl: string): Promise<any> {
   if (!resp.ok) {
     if (isNdlUrl(manifestUrl)) {
       throw new Error(
-        'This NDL item does not have a IIIF manifest. Only items with "internet" access (e.g. public domain) are supported.'
+        'This item is not available in IIIF format.'
       );
     }
     throw new Error(`Failed to fetch manifest: HTTP ${resp.status}`);
