@@ -7,7 +7,7 @@ ENV PDIIIF_SENTRY_DSN=${PDIIIF_SENTRY_DSN}
 ENV PDIIIF_SENTRY_TUNNEL_ENDPOINT=${PDIIIF_SENTRY_TUNNEL_ENDPOINT}
 
 
-RUN npm install -g pnpm
+RUN npm install -g pnpm@10
 
 RUN pnpx playwright install --with-deps --only-shell chromium
 

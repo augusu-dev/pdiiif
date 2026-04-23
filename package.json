@@ -1,0 +1,11 @@
+{
+  "name": "pdiiif-monorepo",
+  "private": true,
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@playwright/browser-chromium",
+      "esbuild",
+      "svelte-preprocess"
+    ]
+  }
+}

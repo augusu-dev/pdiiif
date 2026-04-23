@@ -11,6 +11,7 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "sourceMap": true,
     "declaration": true,
+    "skipLibCheck": true,
     "emitDeclarationOnly": true,
     "outDir": "./dist"
   },
